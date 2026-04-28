@@ -1,0 +1,262 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0
+// Based on "SwingArm ATR Trend Indicator" by Duyck
+// © 2025 ossan_niconico / nico-band 7TF / Pine Script v6
+//@version=6
+indicator("nico-band 7TF", shorttitle="nb-7TF", overlay=true, max_lines_count=500)
+
+// ⚙️ 共通 ATR 設定
+ATRPeriod = input.int(28,    "ATR 期間", minval=1, group="⚙️ 共通 ATR 設定")
+ATRFactor = input.float(3.0, "ATR 倍率", step=0.1, group="⚙️ 共通 ATR 設定")
+
+// ⬜ 1分足（グレー）
+T1_On    = input.bool(true,  "表示",     group="⬜ 1分足（グレー）")
+T1_Max   = input.string("15m", "表示上限チャート足", options=["1m","5m","15m","30m","1H","4H","D","無制限"], group="⬜ 1分足（グレー）")
+T1_TF    = input.timeframe("1","時間足", group="⬜ 1分足（グレー）")
+T1_Bull  = input.color(#909090, "Bull 色", group="⬜ 1分足（グレー）")
+T1_Bear  = input.color(#909090, "Bear 色", group="⬜ 1分足（グレー）")
+T1_Wid   = input.int(1,"Trail 太さ",minval=1,maxval=4, group="⬜ 1分足（グレー）")
+T1_F88   = input.bool(true,  "Fib 88.6% 表示", group="⬜ 1分足（グレー）")
+T1_FCol  = input.color(#70707066, "Fib 色", group="⬜ 1分足（グレー）")
+
+// 🟠 5分足（オレンジ）
+T2_On    = input.bool(true,  "表示",     group="🟠 5分足（オレンジ）")
+T2_Max   = input.string("15m", "表示上限チャート足", options=["1m","5m","15m","30m","1H","4H","D","無制限"], group="🟠 5分足（オレンジ）")
+T2_TF    = input.timeframe("5","時間足", group="🟠 5分足（オレンジ）")
+T2_Bull  = input.color(#ff8c00, "Bull 色", group="🟠 5分足（オレンジ）")
+T2_Bear  = input.color(#ff8c00, "Bear 色", group="🟠 5分足（オレンジ）")
+T2_Wid   = input.int(1,"Trail 太さ",minval=1,maxval=4, group="🟠 5分足（オレンジ）")
+T2_F88   = input.bool(true,  "Fib 88.6% 表示", group="🟠 5分足（オレンジ）")
+T2_FCol  = input.color(#ff8c0066, "Fib 色", group="🟠 5分足（オレンジ）")
+
+// 🟢 15分足（緑）
+T3_On    = input.bool(true,  "表示",      group="🟢 15分足（緑）")
+T3_Max   = input.string("1H", "表示上限チャート足", options=["1m","5m","15m","30m","1H","4H","D","無制限"], group="🟢 15分足（緑）")
+T3_TF    = input.timeframe("15","時間足", group="🟢 15分足（緑）")
+T3_Bull  = input.color(#00aa00, "Bull 色", group="🟢 15分足（緑）")
+T3_Bear  = input.color(#00aa00, "Bear 色", group="🟢 15分足（緑）")
+T3_Wid   = input.int(1,"Trail 太さ",minval=1,maxval=4, group="🟢 15分足（緑）")
+T3_F88   = input.bool(true,  "Fib 88.6% 表示", group="🟢 15分足（緑）")
+T3_FCol  = input.color(#00aa0066, "Fib 色", group="🟢 15分足（緑）")
+
+// 🩵 30分足（水色）
+T4_On    = input.bool(true,  "表示",      group="🩵 30分足（水色）")
+T4_Max   = input.string("4H", "表示上限チャート足", options=["1m","5m","15m","30m","1H","4H","D","無制限"], group="🩵 30分足（水色）")
+T4_TF    = input.timeframe("30","時間足", group="🩵 30分足（水色）")
+T4_Bull  = input.color(#00cccc, "Bull 色", group="🩵 30分足（水色）")
+T4_Bear  = input.color(#00cccc, "Bear 色", group="🩵 30分足（水色）")
+T4_Wid   = input.int(1,"Trail 太さ",minval=1,maxval=4, group="🩵 30分足（水色）")
+T4_F88   = input.bool(true,  "Fib 88.6% 表示", group="🩵 30分足（水色）")
+T4_FCol  = input.color(#00cccc66, "Fib 色", group="🩵 30分足（水色）")
+
+// 🔵 1時間足（青）
+T5_On    = input.bool(true,  "表示",      group="🔵 1時間足（青）")
+T5_Max   = input.string("4H", "表示上限チャート足", options=["1m","5m","15m","30m","1H","4H","D","無制限"], group="🔵 1時間足（青）")
+T5_TF    = input.timeframe("60","時間足", group="🔵 1時間足（青）")
+T5_Bull  = input.color(#3399ff, "Bull 色", group="🔵 1時間足（青）")
+T5_Bear  = input.color(#3399ff, "Bear 色", group="🔵 1時間足（青）")
+T5_Wid   = input.int(1,"Trail 太さ",minval=1,maxval=4, group="🔵 1時間足（青）")
+T5_F88   = input.bool(true,  "Fib 88.6% 表示", group="🔵 1時間足（青）")
+T5_FCol  = input.color(#3399ff66, "Fib 色", group="🔵 1時間足（青）")
+
+// 🟤 4時間足（茶色）
+T6_On    = input.bool(true,   "表示",      group="🟤 4時間足（茶色）")
+T6_Max   = input.string("無制限", "表示上限チャート足", options=["1m","5m","15m","30m","1H","4H","D","無制限"], group="🟤 4時間足（茶色）")
+T6_TF    = input.timeframe("240","時間足", group="🟤 4時間足（茶色）")
+T6_Bull  = input.color(#800000, "Bull 色", group="🟤 4時間足（茶色）")
+T6_Bear  = input.color(#800000, "Bear 色", group="🟤 4時間足（茶色）")
+T6_Wid   = input.int(1,"Trail 太さ",minval=1,maxval=4, group="🟤 4時間足（茶色）")
+T6_F88   = input.bool(true,   "Fib 88.6% 表示", group="🟤 4時間足（茶色）")
+T6_FCol  = input.color(#a0502066, "Fib 色", group="🟤 4時間足（茶色）")
+
+// ⚫ 日足（黒）
+T7_On    = input.bool(true,  "表示",    group="⚫ 日足（黒）")
+T7_Max   = input.string("無制限", "表示上限チャート足", options=["1m","5m","15m","30m","1H","4H","D","無制限"], group="⚫ 日足（黒）")
+T7_TF    = input.timeframe("D","時間足",group="⚫ 日足（黒）")
+T7_Bull  = input.color(#404040, "Bull 色", group="⚫ 日足（黒）")
+T7_Bear  = input.color(#222222, "Bear 色", group="⚫ 日足（黒）")
+T7_Wid   = input.int(1,"Trail 太さ",minval=1,maxval=4, group="⚫ 日足（黒）")
+T7_F88   = input.bool(true,  "Fib 88.6% 表示", group="⚫ 日足（黒）")
+T7_FCol  = input.color(#40404066, "Fib 色", group="⚫ 日足（黒）")
+
+// 🗓️ 日足ピボット（全ラインピンク / PP のみ1段太い）
+dp_col   = input.color(#ff80b0, "日足ピボット 色（全ライン共通）", group="🗓️ 日足ピボット")
+dp_wid   = input.int(1, "日足ピボット 基本太さ（PP はこれ+1）", minval=1, maxval=4, group="🗓️ 日足ピボット")
+dp_Max   = input.string("1H", "表示上限チャート足", options=["1m","5m","15m","30m","1H","4H","D","無制限"], group="🗓️ 日足ピボット")
+show_d_p = input.bool(true,  "PP  表示", group="🗓️ 日足ピボット")
+show_d_1 = input.bool(true,  "R1/S1 表示", group="🗓️ 日足ピボット")
+show_d_2 = input.bool(true, "R2/S2 表示", group="🗓️ 日足ピボット")
+show_d_3 = input.bool(true, "R3/S3 表示", group="🗓️ 日足ピボット")
+
+// 📅 週足ピボット（全ライン紫 / PP のみ1段太い）
+wp_col   = input.color(#9966cc, "週足ピボット 色（全ライン共通）", group="📅 週足ピボット")
+wp_wid   = input.int(1, "週足ピボット 基本太さ（PP はこれ+1）", minval=1, maxval=4, group="📅 週足ピボット")
+wp_Max   = input.string("無制限", "表示上限チャート足", options=["1m","5m","15m","30m","1H","4H","D","無制限"], group="📅 週足ピボット")
+show_w_p = input.bool(true,  "PP  表示", group="📅 週足ピボット")
+show_w_1 = input.bool(true,  "R1/S1 表示", group="📅 週足ピボット")
+show_w_2 = input.bool(true, "R2/S2 表示", group="📅 週足ピボット")
+show_w_3 = input.bool(true, "R3/S3 表示", group="📅 週足ピボット")
+
+// 🔔 アラート
+AlertTF   = input.string("5m",    "アラート基準TF",
+     options=["1m","5m","15m","30m","1H","4H","D"], group="🔔 アラート")
+AlertMode = input.string("Both", "トリガー",
+     options=["Trail","Fib88","Both"], group="🔔 アラート")
+
+// ━━ コア計算 ━━
+calc_flag() =>
+    sma_val    = ta.sma(high - low, ATRPeriod)
+    HiLo       = math.min(high - low, 1.5 * nz(sma_val))
+    HRef       = low  <= high[1] ? high - close[1] : (high - close[1]) - 0.5*(low  - high[1])
+    LRef       = high >= low[1]  ? close[1] - low  : (close[1] - low)  - 0.5*(low[1] - high)
+    tr         = math.max(HiLo, HRef, LRef)
+    loss       = ATRFactor * ta.rma(tr, ATRPeriod)
+    Up         = close - loss
+    Dn         = close + loss
+    var float TrendUp   = na
+    var float TrendDown = na
+    var int   Trend     = 1
+    TrendUp   := close[1] > TrendUp[1]   ? math.max(Up, TrendUp[1])   : Up
+    TrendDown := close[1] < TrendDown[1] ? math.min(Dn, TrendDown[1]) : Dn
+    Trend     := close > TrendDown[1] ? 1 : close < TrendUp[1] ? -1 : nz(Trend[1], 1)
+    trail      = Trend == 1 ? TrendUp : TrendDown
+    var float ex = 0.0
+    cross_up   = ta.crossover(Trend, 0)
+    cross_down = ta.crossunder(Trend, 0)
+    if cross_up
+        ex := high
+    else if cross_down
+        ex := low
+    else if Trend == 1
+        ex := math.max(ex, high)
+    else
+        ex := math.min(ex, low)
+    [trail[1], ex[1], Trend[1]]
+
+// ━━ MTF 取得 ━━
+[sv1,pk1,d1] = request.security(syminfo.tickerid, T1_TF, calc_flag(), lookahead=barmerge.lookahead_on)
+[sv2,pk2,d2] = request.security(syminfo.tickerid, T2_TF, calc_flag(), lookahead=barmerge.lookahead_on)
+[sv3,pk3,d3] = request.security(syminfo.tickerid, T3_TF, calc_flag(), lookahead=barmerge.lookahead_on)
+[sv4,pk4,d4] = request.security(syminfo.tickerid, T4_TF, calc_flag(), lookahead=barmerge.lookahead_on)
+[sv5,pk5,d5] = request.security(syminfo.tickerid, T5_TF, calc_flag(), lookahead=barmerge.lookahead_on)
+[sv6,pk6,d6] = request.security(syminfo.tickerid, T6_TF, calc_flag(), lookahead=barmerge.lookahead_on)
+[sv7,pk7,d7] = request.security(syminfo.tickerid, T7_TF, calc_flag(), lookahead=barmerge.lookahead_on)
+
+float f1 = pk1 + (sv1-pk1)*0.886
+float f2 = pk2 + (sv2-pk2)*0.886
+float f3 = pk3 + (sv3-pk3)*0.886
+float f4 = pk4 + (sv4-pk4)*0.886
+float f5 = pk5 + (sv5-pk5)*0.886
+float f6 = pk6 + (sv6-pk6)*0.886
+float f7 = pk7 + (sv7-pk7)*0.886
+
+// ━━ チャート足による表示判定 ━━
+chart_mins = timeframe.in_seconds(timeframe.period) / 60
+get_mins(tf_str) =>
+    tf_str == "1m" ? 1 : tf_str == "5m" ? 5 : tf_str == "15m" ? 15 : tf_str == "30m" ? 30 : tf_str == "1H" ? 60 : tf_str == "4H" ? 240 : tf_str == "D" ? 1440 : 999999
+
+show_T1 = T1_On and chart_mins <= get_mins(T1_Max)
+show_T2 = T2_On and chart_mins <= get_mins(T2_Max)
+show_T3 = T3_On and chart_mins <= get_mins(T3_Max)
+show_T4 = T4_On and chart_mins <= get_mins(T4_Max)
+show_T5 = T5_On and chart_mins <= get_mins(T5_Max)
+show_T6 = T6_On and chart_mins <= get_mins(T6_Max)
+show_T7 = T7_On and chart_mins <= get_mins(T7_Max)
+
+// ピボット用の表示判定
+show_dp_tf = chart_mins <= get_mins(dp_Max)
+show_wp_tf = chart_mins <= get_mins(wp_Max)
+
+// ━━ プロット（Trail=動的Bull/Bear色、F88=静的、背景色塗りつぶし）━━
+p1_t = plot(show_T1 ? sv1 : na, "1m Trail", d1==1 ? T1_Bull : T1_Bear, T1_Wid)
+p1_f = plot(show_T1 and T1_F88 ? f1 : na, "1m F88", T1_FCol, 1)
+fill(p1_t, p1_f, show_T1 and T1_F88 ? T1_FCol : na, "1m Fill")
+
+p2_t = plot(show_T2 ? sv2 : na, "5m Trail", d2==1 ? T2_Bull : T2_Bear, T2_Wid)
+p2_f = plot(show_T2 and T2_F88 ? f2 : na, "5m F88", T2_FCol, 1)
+fill(p2_t, p2_f, show_T2 and T2_F88 ? T2_FCol : na, "5m Fill")
+
+p3_t = plot(show_T3 ? sv3 : na, "15m Trail", d3==1 ? T3_Bull : T3_Bear, T3_Wid)
+p3_f = plot(show_T3 and T3_F88 ? f3 : na, "15m F88", T3_FCol, 1)
+fill(p3_t, p3_f, show_T3 and T3_F88 ? T3_FCol : na, "15m Fill")
+
+p4_t = plot(show_T4 ? sv4 : na, "30m Trail", d4==1 ? T4_Bull : T4_Bear, T4_Wid)
+p4_f = plot(show_T4 and T4_F88 ? f4 : na, "30m F88", T4_FCol, 1)
+fill(p4_t, p4_f, show_T4 and T4_F88 ? T4_FCol : na, "30m Fill")
+
+p5_t = plot(show_T5 ? sv5 : na, "1H Trail", d5==1 ? T5_Bull : T5_Bear, T5_Wid)
+p5_f = plot(show_T5 and T5_F88 ? f5 : na, "1H F88", T5_FCol, 1)
+fill(p5_t, p5_f, show_T5 and T5_F88 ? T5_FCol : na, "1H Fill")
+
+p6_t = plot(show_T6 ? sv6 : na, "4H Trail", d6==1 ? T6_Bull : T6_Bear, T6_Wid)
+p6_f = plot(show_T6 and T6_F88 ? f6 : na, "4H F88", T6_FCol, 1)
+fill(p6_t, p6_f, show_T6 and T6_F88 ? T6_FCol : na, "4H Fill")
+
+p7_t = plot(show_T7 ? sv7 : na, "D  Trail", d7==1 ? T7_Bull : T7_Bear, T7_Wid)
+p7_f = plot(show_T7 and T7_F88 ? f7 : na, "D  F88", T7_FCol, 1)
+fill(p7_t, p7_f, show_T7 and T7_F88 ? T7_FCol : na, "D  Fill")
+
+// ━━ ピボット ━━
+calc_pivot() =>
+    float h = high[1], float l = low[1], float c = close[1]
+    float p = (h+l+c)/3.0, float rng = h-l
+    [p, p*2-l, p*2-h, p+rng, p-rng, p*2-l+rng, p*2-h-rng]
+
+[dp,dr1,ds1,dr2,ds2,dr3,ds3] = request.security(syminfo.tickerid,"D",calc_pivot(),lookahead=barmerge.lookahead_on)
+[wp,wr1,ws1,wr2,ws2,wr3,ws3] = request.security(syminfo.tickerid,"W",calc_pivot(),lookahead=barmerge.lookahead_on)
+
+plot(show_d_p and show_dp_tf ? dp  : na,"D-PP",dp_col,math.min(dp_wid+1,4),plot.style_stepline)
+plot(show_d_1 and show_dp_tf ? dr1 : na,"D-R1",dp_col,dp_wid,              plot.style_stepline)
+plot(show_d_1 and show_dp_tf ? ds1 : na,"D-S1",dp_col,dp_wid,              plot.style_stepline)
+plot(show_d_2 and show_dp_tf ? dr2 : na,"D-R2",dp_col,dp_wid,              plot.style_stepline)
+plot(show_d_2 and show_dp_tf ? ds2 : na,"D-S2",dp_col,dp_wid,              plot.style_stepline)
+// R3/S3 はプロット数上限回避のためコメントアウト
+// plot(show_d_3 and show_dp_tf ? dr3 : na,"D-R3",dp_col,dp_wid,              plot.style_stepline)
+// plot(show_d_3 and show_dp_tf ? ds3 : na,"D-S3",dp_col,dp_wid,              plot.style_stepline)
+
+plot(show_w_p and show_wp_tf ? wp  : na,"W-PP",wp_col,math.min(wp_wid+1,4),plot.style_stepline)
+plot(show_w_1 and show_wp_tf ? wr1 : na,"W-R1",wp_col,wp_wid,              plot.style_stepline)
+plot(show_w_1 and show_wp_tf ? ws1 : na,"W-S1",wp_col,wp_wid,              plot.style_stepline)
+plot(show_w_2 and show_wp_tf ? wr2 : na,"W-R2",wp_col,wp_wid,              plot.style_stepline)
+plot(show_w_2 and show_wp_tf ? ws2 : na,"W-S2",wp_col,wp_wid,              plot.style_stepline)
+// R3/S3 はプロット数上限回避のためコメントアウト
+// plot(show_w_3 and show_wp_tf ? wr3 : na,"W-R3",wp_col,wp_wid,              plot.style_stepline)
+// plot(show_w_3 and show_wp_tf ? ws3 : na,"W-S3",wp_col,wp_wid,              plot.style_stepline)
+
+// ━━ アラート ━━
+var float _sv = na
+var float _f  = na
+var int   _d  = 1
+if AlertTF == "1m"
+    _sv := sv1, _f := f1, _d := d1
+else if AlertTF == "5m"
+    _sv := sv2, _f := f2, _d := d2
+else if AlertTF == "15m"
+    _sv := sv3, _f := f3, _d := d3
+else if AlertTF == "30m"
+    _sv := sv4, _f := f4, _d := d4
+else if AlertTF == "1H"
+    _sv := sv5, _f := f5, _d := d5
+else if AlertTF == "4H"
+    _sv := sv6, _f := f6, _d := d6
+else
+    _sv := sv7, _f := f7, _d := d7
+
+alertcondition((AlertMode=="Trail" or AlertMode=="Both") and (_d==1 ? low<=_sv : high>=_sv),
+     title="Trail タッチ", message="nico-band 7TF [{ticker}/{interval}] Trail タッチ")
+alertcondition((AlertMode=="Fib88" or AlertMode=="Both") and (_d==1 ? low<=_f : high>=_f),
+     title="Fib88 タッチ",  message="nico-band 7TF [{ticker}/{interval}] Fib88.6% タッチ")
+
+if ta.change(d1) != 0
+    alert("nico-band 7TF 1分足 転換", alert.freq_once_per_bar)
+if ta.change(d2) != 0
+    alert("nico-band 7TF 5分足 転換", alert.freq_once_per_bar)
+if ta.change(d3) != 0
+    alert("nico-band 7TF 15分足 転換", alert.freq_once_per_bar)
+if ta.change(d4) != 0
+    alert("nico-band 7TF 30分足 転換", alert.freq_once_per_bar)
+if ta.change(d5) != 0
+    alert("nico-band 7TF 1時間足 転換", alert.freq_once_per_bar)
+if ta.change(d6) != 0
+    alert("nico-band 7TF 4時間足 転換", alert.freq_once_per_bar)
+if ta.change(d7) != 0
+    alert("nico-band 7TF 日足 転換", alert.freq_once_per_bar)
