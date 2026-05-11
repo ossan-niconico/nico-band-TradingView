@@ -10,7 +10,8 @@
 
 ## 詳細マニュアル
 
-note記事（https://note.com/ossan_niconico/n/n39d024818c0c）
+note記事
+https://note.com/ossan_niconico/n/n39d024818c0c
 
 ## 作者
 
